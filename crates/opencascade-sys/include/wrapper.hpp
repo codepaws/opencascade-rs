@@ -22,6 +22,7 @@
 #include <BRepLib.hxx>
 #include <BRepLib_ToolTriangulatedShape.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepOffsetAPI_MakePipe.hxx>
 #include <BRepOffsetAPI_MakeThickSolid.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -50,7 +51,9 @@
 #include <STEPControl_Writer.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <Standard_Type.hxx>
+#include <Standard_Version.hxx>
 #include <StlAPI_Writer.hxx>
+#include <sstream>
 #include <TColgp_Array1OfDir.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
@@ -204,6 +207,11 @@ inline void MakeThickSolidByJoin(BRepOffsetAPI_MakeThickSolid &make_thick_solid,
                                  const TopTools_ListOfShape &closing_faces, const Standard_Real offset,
                                  const Standard_Real tolerance) {
   make_thick_solid.MakeThickSolidByJoin(shape, closing_faces, offset, tolerance);
+}
+
+inline std::unique_ptr<BRepOffsetAPI_MakePipe>
+BRepOffsetAPI_MakePipe_ctor(const TopoDS_Wire &spine, const TopoDS_Shape &profile) {
+  return std::unique_ptr<BRepOffsetAPI_MakePipe>(new BRepOffsetAPI_MakePipe(spine, profile));
 }
 
 // Geometric processing
@@ -405,6 +413,12 @@ inline std::unique_ptr<TopoDS_Wire> outer_wire(const TopoDS_Face &face) {
   return std::unique_ptr<TopoDS_Wire>(new TopoDS_Wire(BRepTools::OuterWire(face)));
 }
 
+inline rust::String BRepTools_Write_to_string(const TopoDS_Shape &shape) {
+  std::ostringstream stream;
+  BRepTools::Write(shape, stream);
+  return rust::String(stream.str());
+}
+
 // Collections
 inline void map_shapes(const TopoDS_Shape &S, const TopAbs_ShapeEnum T, TopTools_IndexedMapOfShape &M) {
   TopExp::MapShapes(S, T, M);
@@ -423,3 +437,8 @@ inline void map_shapes_and_unique_ancestors(const TopoDS_Shape &S, const TopAbs_
 inline std::unique_ptr<gp_Dir> TColgp_Array1OfDir_Value(const TColgp_Array1OfDir &array, Standard_Integer index) {
   return std::unique_ptr<gp_Dir>(new gp_Dir(array.Value(index)));
 }
+
+// OCC version query
+inline int occ_version_major() { return OCC_VERSION_MAJOR; }
+inline int occ_version_minor() { return OCC_VERSION_MINOR; }
+inline int occ_version_maintenance() { return OCC_VERSION_MAINTENANCE; }

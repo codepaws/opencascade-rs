@@ -649,6 +649,17 @@ pub mod ffi {
         pub fn Build(self: Pin<&mut BRepOffsetAPI_ThruSections>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepOffsetAPI_ThruSections) -> bool;
 
+        // Pipe sweep
+        type BRepOffsetAPI_MakePipe;
+
+        pub fn BRepOffsetAPI_MakePipe_ctor(
+            spine: &TopoDS_Wire,
+            profile: &TopoDS_Shape,
+        ) -> UniquePtr<BRepOffsetAPI_MakePipe>;
+        pub fn Shape(self: Pin<&mut BRepOffsetAPI_MakePipe>) -> &TopoDS_Shape;
+        pub fn IsDone(self: &BRepOffsetAPI_MakePipe) -> bool;
+        pub fn Build(self: Pin<&mut BRepOffsetAPI_MakePipe>, progress: &Message_ProgressRange);
+
         // Boolean Operations
         type BRepAlgoAPI_Fuse;
         type BOPAlgo_GlueEnum;
@@ -1012,6 +1023,7 @@ pub mod ffi {
 
         // BRepTools
         pub fn outer_wire(face: &TopoDS_Face) -> UniquePtr<TopoDS_Wire>;
+        pub fn BRepTools_Write_to_string(shape: &TopoDS_Shape) -> String;
 
         // Cleaning
         type ShapeUpgrade_UnifySameDomain;
@@ -1026,5 +1038,10 @@ pub mod ffi {
         pub fn AllowInternalEdges(self: Pin<&mut ShapeUpgrade_UnifySameDomain>, allow: bool);
         pub fn Build(self: Pin<&mut ShapeUpgrade_UnifySameDomain>);
         pub fn Shape(self: &ShapeUpgrade_UnifySameDomain) -> &TopoDS_Shape;
+
+        // OCC version query
+        pub fn occ_version_major() -> i32;
+        pub fn occ_version_minor() -> i32;
+        pub fn occ_version_maintenance() -> i32;
     }
 }
