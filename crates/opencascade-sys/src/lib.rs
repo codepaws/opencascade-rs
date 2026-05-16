@@ -996,6 +996,19 @@ pub mod ffi {
             point: Pin<&mut gp_Pnt>,
             normal: Pin<&mut gp_Vec>,
         );
+        pub fn Bounds(
+            self: &BRepGProp_Face,
+            u_min: &mut f64,
+            u_max: &mut f64,
+            v_min: &mut f64,
+            v_max: &mut f64,
+        );
+
+        // Shape Validity
+        type BRepCheck_Analyzer;
+        #[cxx_name = "construct_unique"]
+        pub fn BRepCheck_Analyzer_ctor(shape: &TopoDS_Shape) -> UniquePtr<BRepCheck_Analyzer>;
+        pub fn IsValid(self: &BRepCheck_Analyzer) -> bool;
 
         // BRepTools
         pub fn outer_wire(face: &TopoDS_Face) -> UniquePtr<TopoDS_Wire>;
