@@ -570,6 +570,10 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepFilletAPI_MakeFillet>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepFilletAPI_MakeFillet>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepFilletAPI_MakeFillet) -> bool;
+        // Authoritative fillet fault status (IsDone alone is insufficient:
+        // OCCT can report IsDone()==true with faulty contours / no result).
+        pub fn NbFaultyContours(self: &BRepFilletAPI_MakeFillet) -> i32;
+        pub fn HasResult(self: &BRepFilletAPI_MakeFillet) -> bool;
 
         type BRepFilletAPI_MakeFillet2d;
 
@@ -673,6 +677,14 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepAlgoAPI_Fuse>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepAlgoAPI_Fuse>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepAlgoAPI_Fuse) -> bool;
+        // Authoritative boolean failure/warning state (IsDone() only means
+        // "the builder ran"). HasErrors/HasWarnings come from BOPAlgo_Options,
+        // a *protected* base re-published public via `using` in
+        // BRepAlgoAPI_Algo: a direct call is legal but cxx's
+        // pointer-to-member member-binding cannot cross the protected base,
+        // so these are call-shims (see wrapper.hpp).
+        pub fn BRepAlgoAPI_Fuse_has_errors(op: &BRepAlgoAPI_Fuse) -> bool;
+        pub fn BRepAlgoAPI_Fuse_has_warnings(op: &BRepAlgoAPI_Fuse) -> bool;
         pub fn SectionEdges(self: Pin<&mut BRepAlgoAPI_Fuse>) -> &TopTools_ListOfShape;
         pub fn SetGlue(self: Pin<&mut BRepAlgoAPI_Fuse>, glue: BOPAlgo_GlueEnum);
 
@@ -687,6 +699,8 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepAlgoAPI_Cut>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepAlgoAPI_Cut>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepAlgoAPI_Cut) -> bool;
+        pub fn BRepAlgoAPI_Cut_has_errors(op: &BRepAlgoAPI_Cut) -> bool;
+        pub fn BRepAlgoAPI_Cut_has_warnings(op: &BRepAlgoAPI_Cut) -> bool;
         pub fn Generated<'a>(
             self: Pin<&'a mut BRepAlgoAPI_Cut>,
             shape: &'a TopoDS_Shape,
@@ -704,6 +718,8 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepAlgoAPI_Common>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepAlgoAPI_Common>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepAlgoAPI_Common) -> bool;
+        pub fn BRepAlgoAPI_Common_has_errors(op: &BRepAlgoAPI_Common) -> bool;
+        pub fn BRepAlgoAPI_Common_has_warnings(op: &BRepAlgoAPI_Common) -> bool;
 
         type BRepAlgoAPI_Section;
 

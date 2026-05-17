@@ -442,3 +442,17 @@ inline std::unique_ptr<gp_Dir> TColgp_Array1OfDir_Value(const TColgp_Array1OfDir
 inline int occ_version_major() { return OCC_VERSION_MAJOR; }
 inline int occ_version_minor() { return OCC_VERSION_MINOR; }
 inline int occ_version_maintenance() { return OCC_VERSION_MAINTENANCE; }
+
+// Boolean-operation authoritative status. HasErrors()/HasWarnings() are
+// declared in BOPAlgo_Options, which BRepAlgoAPI_Algo inherits *protected*
+// and re-publishes public via `using`. A direct member call resolves through
+// that public `using` and is legal; a cxx pointer-to-member member-binding
+// is not (it would form a BOPAlgo_Options::* and fail to convert across the
+// protected base), so these call-shims are required. IsDone() only reports
+// "the builder ran" -- HasErrors() is the authoritative failure signal.
+inline bool BRepAlgoAPI_Cut_has_errors(const BRepAlgoAPI_Cut &op) { return op.HasErrors(); }
+inline bool BRepAlgoAPI_Cut_has_warnings(const BRepAlgoAPI_Cut &op) { return op.HasWarnings(); }
+inline bool BRepAlgoAPI_Fuse_has_errors(const BRepAlgoAPI_Fuse &op) { return op.HasErrors(); }
+inline bool BRepAlgoAPI_Fuse_has_warnings(const BRepAlgoAPI_Fuse &op) { return op.HasWarnings(); }
+inline bool BRepAlgoAPI_Common_has_errors(const BRepAlgoAPI_Common &op) { return op.HasErrors(); }
+inline bool BRepAlgoAPI_Common_has_warnings(const BRepAlgoAPI_Common &op) { return op.HasWarnings(); }
