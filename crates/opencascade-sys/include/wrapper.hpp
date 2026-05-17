@@ -23,6 +23,8 @@
 #include <BRepLib_ToolTriangulatedShape.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepOffsetAPI_MakePipe.hxx>
+#include <BRepOffsetAPI_MakePipeShell.hxx>
+#include <BRepBuilderAPI_TransitionMode.hxx>
 #include <BRepOffsetAPI_MakeThickSolid.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -212,6 +214,27 @@ inline void MakeThickSolidByJoin(BRepOffsetAPI_MakeThickSolid &make_thick_solid,
 inline std::unique_ptr<BRepOffsetAPI_MakePipe>
 BRepOffsetAPI_MakePipe_ctor(const TopoDS_Wire &spine, const TopoDS_Shape &profile) {
   return std::unique_ptr<BRepOffsetAPI_MakePipe>(new BRepOffsetAPI_MakePipe(spine, profile));
+}
+
+// MakePipeShell: corner-aware multi-section sweep (handles non-tangent
+// spines that plain MakePipe silently mis-sweeps). SetMode / SetTransitionMode
+// / Add are overloaded in OCCT, so they are bound via disambiguating call
+// shims; the transition mode is passed as an int (0=Transformed,
+// 1=RightCorner, 2=RoundCorner) to avoid binding the enum.
+inline std::unique_ptr<BRepOffsetAPI_MakePipeShell>
+BRepOffsetAPI_MakePipeShell_ctor(const TopoDS_Wire &spine) {
+  return std::unique_ptr<BRepOffsetAPI_MakePipeShell>(new BRepOffsetAPI_MakePipeShell(spine));
+}
+inline void BRepOffsetAPI_MakePipeShell_set_mode(BRepOffsetAPI_MakePipeShell &b, bool frenet) {
+  b.SetMode(frenet);
+}
+inline void BRepOffsetAPI_MakePipeShell_set_transition_mode(BRepOffsetAPI_MakePipeShell &b, int mode) {
+  b.SetTransitionMode(static_cast<BRepBuilderAPI_TransitionMode>(mode));
+}
+inline void BRepOffsetAPI_MakePipeShell_add_profile(BRepOffsetAPI_MakePipeShell &b,
+                                                    const TopoDS_Shape &profile,
+                                                    bool with_contact, bool with_correction) {
+  b.Add(profile, with_contact, with_correction);
 }
 
 // Geometric processing

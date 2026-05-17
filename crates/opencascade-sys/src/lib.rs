@@ -664,6 +664,36 @@ pub mod ffi {
         pub fn IsDone(self: &BRepOffsetAPI_MakePipe) -> bool;
         pub fn Build(self: Pin<&mut BRepOffsetAPI_MakePipe>, progress: &Message_ProgressRange);
 
+        // Corner-aware sweep. Build/IsDone/MakeSolid/Shape bind directly
+        // (declared on / publicly inherited by the class); the overloaded
+        // SetMode/SetTransitionMode/Add go through the wrapper.hpp call-shims.
+        type BRepOffsetAPI_MakePipeShell;
+
+        pub fn BRepOffsetAPI_MakePipeShell_ctor(
+            spine: &TopoDS_Wire,
+        ) -> UniquePtr<BRepOffsetAPI_MakePipeShell>;
+        pub fn BRepOffsetAPI_MakePipeShell_set_mode(
+            builder: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            frenet: bool,
+        );
+        pub fn BRepOffsetAPI_MakePipeShell_set_transition_mode(
+            builder: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            mode: i32,
+        );
+        pub fn BRepOffsetAPI_MakePipeShell_add_profile(
+            builder: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            profile: &TopoDS_Shape,
+            with_contact: bool,
+            with_correction: bool,
+        );
+        pub fn Build(
+            self: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            progress: &Message_ProgressRange,
+        );
+        pub fn IsDone(self: &BRepOffsetAPI_MakePipeShell) -> bool;
+        pub fn MakeSolid(self: Pin<&mut BRepOffsetAPI_MakePipeShell>) -> bool;
+        pub fn Shape(self: Pin<&mut BRepOffsetAPI_MakePipeShell>) -> &TopoDS_Shape;
+
         // Boolean Operations
         type BRepAlgoAPI_Fuse;
         type BOPAlgo_GlueEnum;
