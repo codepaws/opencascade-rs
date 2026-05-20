@@ -40,6 +40,21 @@ pub mod ffi {
         BOPAlgo_GlueFull,
     }
 
+    // ─── Q1: POD result of `check_interference` (see C++ impl in q1_interference.cc).
+    //
+    // support_a_kind / support_b_kind carry OCCT's BRepExtrema_SupportType
+    // enumerator values as u32 (0=IsVertex, 1=IsOnEdge, 2=IsInFace). We don't
+    // re-bind the enum into the cxx bridge because OCCT declares it as an
+    // unscoped C enum, and cxx-rs would emit a conflicting scoped `enum class`
+    // declaration of the same name.
+    #[derive(Debug, Clone, Copy)]
+    pub struct ClashFfi {
+        pub has_errors: bool,
+        pub interferes: bool,
+        pub support_a_kind: u32,
+        pub support_b_kind: u32,
+    }
+
     unsafe extern "C++" {
         // https://github.com/dtolnay/cxx/issues/280
 
@@ -95,6 +110,10 @@ pub mod ffi {
         #[cxx_name = "construct_unique"]
         pub fn new_list_of_shape() -> UniquePtr<TopTools_ListOfShape>;
         pub fn shape_list_append_face(list: Pin<&mut TopTools_ListOfShape>, face: &TopoDS_Face);
+        pub fn shape_list_append_shape(
+            list: Pin<&mut TopTools_ListOfShape>,
+            shape: &TopoDS_Shape,
+        );
         pub fn Size(self: &TopTools_ListOfShape) -> i32;
 
         #[cxx_name = "list_to_vector"]
@@ -351,6 +370,7 @@ pub mod ffi {
 
         pub fn IsNull(self: &TopoDS_Shape) -> bool;
         pub fn IsEqual(self: &TopoDS_Shape, other: &TopoDS_Shape) -> bool;
+        pub fn IsSame(self: &TopoDS_Shape, other: &TopoDS_Shape) -> bool;
         pub fn ShapeType(self: &TopoDS_Shape) -> TopAbs_ShapeEnum;
 
         type TopAbs_Orientation;
@@ -763,6 +783,54 @@ pub mod ffi {
         pub fn Build(self: Pin<&mut BRepAlgoAPI_Section>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepAlgoAPI_Section) -> bool;
 
+        // ─── Q1: BRepExtrema_DistShapeShape (min-distance + nearest points)
+        type BRepExtrema_DistShapeShape;
+
+        pub fn BRepExtrema_DistShapeShape_ctor(
+            shape1: &TopoDS_Shape,
+            shape2: &TopoDS_Shape,
+        ) -> UniquePtr<BRepExtrema_DistShapeShape>;
+
+        pub fn BRepExtrema_DistShapeShape_Perform(
+            self_: Pin<&mut BRepExtrema_DistShapeShape>,
+        ) -> bool;
+        pub fn IsDone(self: &BRepExtrema_DistShapeShape) -> bool;
+        pub fn NbSolution(self: &BRepExtrema_DistShapeShape) -> i32;
+        pub fn Value(self: &BRepExtrema_DistShapeShape) -> f64;
+
+        pub fn DistShapeShape_PointOnShape1(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> UniquePtr<gp_Pnt>;
+        pub fn DistShapeShape_PointOnShape2(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> UniquePtr<gp_Pnt>;
+
+        // Returns OCCT's BRepExtrema_SupportType as u32 (we don't bind the
+        // enum itself to avoid the cxx-rs scoped vs OCCT unscoped redeclaration
+        // conflict). Encoding: 0=IsVertex, 1=IsOnEdge, 2=IsInFace.
+        pub fn DistShapeShape_SupportTypeShape1(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> u32;
+        pub fn DistShapeShape_SupportTypeShape2(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> u32;
+
+        // OCCT's SupportOnShape1/2 return TopoDS_Shape by VALUE (not by
+        // reference): we use the make_unique-copy fallback pattern from
+        // plan §10.8 / spec §3 — semantics are identical.
+        pub fn DistShapeShape_SupportOnShape1(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> UniquePtr<TopoDS_Shape>;
+        pub fn DistShapeShape_SupportOnShape2(
+            self_: &BRepExtrema_DistShapeShape,
+            n: i32,
+        ) -> UniquePtr<TopoDS_Shape>;
+
         // Geometric processor
         type gp_Ax1;
         type gp_Ax2;
@@ -1089,5 +1157,21 @@ pub mod ffi {
         pub fn occ_version_major() -> i32;
         pub fn occ_version_minor() -> i32;
         pub fn occ_version_maintenance() -> i32;
+
+        // ─── Q1: CheckerSI orchestrator (returns POD ClashFfi).
+        //
+        // Wraps BOPAlgo_CheckerSI: builds a compound of shape_a + shape_b,
+        // runs the self-intersection checker, then walks BOPDS_DS picking the
+        // first inter-shape interference pair (filtering out same-shape pairs).
+        // Out-params support_a_out / support_b_out are populated with the
+        // selected support sub-shapes; err_msg_out captures CheckerSI errors
+        // or Standard_Failure exception messages.
+        pub fn check_interference(
+            shape_a: &TopoDS_Shape,
+            shape_b: &TopoDS_Shape,
+            support_a_out: Pin<&mut UniquePtr<TopoDS_Shape>>,
+            support_b_out: Pin<&mut UniquePtr<TopoDS_Shape>>,
+            err_msg_out: Pin<&mut CxxString>,
+        ) -> ClashFfi;
     }
 }

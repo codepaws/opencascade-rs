@@ -1,5 +1,18 @@
+#ifndef OPENCASCADE_SYS_WRAPPER_HPP
+#define OPENCASCADE_SYS_WRAPPER_HPP
+
 #include "rust/cxx.h"
+#include <BOPAlgo_CheckerSI.hxx>
 #include <BOPAlgo_GlueEnum.hxx>
+#include <BOPDS_DS.hxx>
+#include <BOPDS_Interf.hxx>
+#include <BOPDS_VectorOfInterfEE.hxx>
+#include <BOPDS_VectorOfInterfEF.hxx>
+#include <BOPDS_VectorOfInterfFF.hxx>
+#include <BOPDS_VectorOfInterfVE.hxx>
+#include <BOPDS_VectorOfInterfVF.hxx>
+#include <BOPDS_VectorOfInterfVV.hxx>
+#include <BRepExtrema_DistShapeShape.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -52,6 +65,7 @@
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
+#include <Standard_Failure.hxx>
 #include <Standard_Type.hxx>
 #include <Standard_Version.hxx>
 #include <StlAPI_Writer.hxx>
@@ -59,6 +73,7 @@
 #include <TColgp_Array1OfDir.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
@@ -135,6 +150,9 @@ inline std::unique_ptr<HandleGeomPlane> new_HandleGeomPlane_from_HandleGeomSurfa
 
 // Collections
 inline void shape_list_append_face(TopTools_ListOfShape &list, const TopoDS_Face &face) { list.Append(face); }
+inline void shape_list_append_shape(TopTools_ListOfShape &list, const TopoDS_Shape &shape) {
+  list.Append(shape);
+}
 
 // Geometry
 inline const gp_Pnt &handle_geom_plane_location(const HandleGeomPlane &plane) { return plane->Location(); }
@@ -235,6 +253,53 @@ inline void BRepOffsetAPI_MakePipeShell_add_profile(BRepOffsetAPI_MakePipeShell 
                                                     const TopoDS_Shape &profile,
                                                     bool with_contact, bool with_correction) {
   b.Add(profile, with_contact, with_correction);
+}
+
+// ─── Q1: BRepExtrema_DistShapeShape (min-distance + nearest points)
+
+inline std::unique_ptr<BRepExtrema_DistShapeShape>
+BRepExtrema_DistShapeShape_ctor(const TopoDS_Shape &shape1, const TopoDS_Shape &shape2) {
+  return std::make_unique<BRepExtrema_DistShapeShape>(shape1, shape2);
+}
+
+// OCCT's Perform takes a Message_ProgressRange default arg and returns
+// Standard_Boolean; cxx-rs can't bind C++ default args, so we wrap it.
+inline bool BRepExtrema_DistShapeShape_Perform(BRepExtrema_DistShapeShape &self_) {
+  return self_.Perform() == Standard_True;
+}
+
+inline std::unique_ptr<gp_Pnt> DistShapeShape_PointOnShape1(const BRepExtrema_DistShapeShape &self_,
+                                                            Standard_Integer n) {
+  return std::make_unique<gp_Pnt>(self_.PointOnShape1(n));
+}
+inline std::unique_ptr<gp_Pnt> DistShapeShape_PointOnShape2(const BRepExtrema_DistShapeShape &self_,
+                                                            Standard_Integer n) {
+  return std::make_unique<gp_Pnt>(self_.PointOnShape2(n));
+}
+
+// OCCT's BRepExtrema_SupportType is an unscoped C enum; cxx-rs can't bind it
+// (it would emit a conflicting scoped enum class of the same name), so we
+// expose its enumerator values as uint32_t. Encoding matches OCCT:
+//   0=IsVertex, 1=IsOnEdge, 2=IsInFace.
+inline ::std::uint32_t DistShapeShape_SupportTypeShape1(const BRepExtrema_DistShapeShape &self_,
+                                                        Standard_Integer n) {
+  return static_cast<::std::uint32_t>(self_.SupportTypeShape1(n));
+}
+inline ::std::uint32_t DistShapeShape_SupportTypeShape2(const BRepExtrema_DistShapeShape &self_,
+                                                        Standard_Integer n) {
+  return static_cast<::std::uint32_t>(self_.SupportTypeShape2(n));
+}
+
+// SupportOnShape1/2 return TopoDS_Shape by value in OCCT; copy into a
+// unique_ptr so cxx-rs owns the result (plan §10.8 fallback pattern; spec §3
+// accepts either return-by-ref or unique_ptr-copy).
+inline std::unique_ptr<TopoDS_Shape> DistShapeShape_SupportOnShape1(const BRepExtrema_DistShapeShape &self_,
+                                                                    Standard_Integer n) {
+  return std::make_unique<TopoDS_Shape>(self_.SupportOnShape1(n));
+}
+inline std::unique_ptr<TopoDS_Shape> DistShapeShape_SupportOnShape2(const BRepExtrema_DistShapeShape &self_,
+                                                                    Standard_Integer n) {
+  return std::make_unique<TopoDS_Shape>(self_.SupportOnShape2(n));
 }
 
 // Geometric processing
@@ -479,3 +544,17 @@ inline bool BRepAlgoAPI_Fuse_has_errors(const BRepAlgoAPI_Fuse &op) { return op.
 inline bool BRepAlgoAPI_Fuse_has_warnings(const BRepAlgoAPI_Fuse &op) { return op.HasWarnings(); }
 inline bool BRepAlgoAPI_Common_has_errors(const BRepAlgoAPI_Common &op) { return op.HasErrors(); }
 inline bool BRepAlgoAPI_Common_has_warnings(const BRepAlgoAPI_Common &op) { return op.HasWarnings(); }
+
+// ─── Q1: CheckerSI orchestrator (`check_interference`) is implemented in
+//        `src/q1_interference.cc` (compiled by build.rs). It is declared as a
+//        free function in the cxx bridge (lib.rs) and references the ClashFfi
+//        shared struct that cxx-rs emits in lib.rs.cc after this header is
+//        included, so its definition cannot live in this header. We just
+//        forward-declare it here so the cxx-rs-generated trampoline can take
+//        its address as `::check_interference`.
+struct ClashFfi;
+ClashFfi check_interference(const TopoDS_Shape &shape_a, const TopoDS_Shape &shape_b,
+                            std::unique_ptr<TopoDS_Shape> &support_a_out,
+                            std::unique_ptr<TopoDS_Shape> &support_b_out, std::string &err_msg_out);
+
+#endif  // OPENCASCADE_SYS_WRAPPER_HPP

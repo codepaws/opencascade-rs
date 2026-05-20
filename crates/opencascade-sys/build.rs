@@ -41,14 +41,25 @@ fn main() {
 
     build
         .cpp(true)
-        .flag_if_supported("-std=c++11")
+        // C++17: cxx-rs 1.x emits `inline` variables (the `unsafe_bitcopy`
+        // shared-struct constant) which require c++17 on MSVC. OCCT
+        // 7.x itself targets c++14+ and compiles cleanly under c++17.
+        .flag_if_supported("-std=c++17")
+        .flag_if_supported("/std:c++17")
         .define("_USE_MATH_DEFINES", "TRUE")
         .include(occt_include_path())
         .include("include")
+        // Q1 interference-binding: BOPAlgo_CheckerSI orchestrator. Lives in
+        // a separate .cc (not in wrapper.hpp) because its body needs the
+        // full definition of the cxx-rs ClashFfi shared struct, which is
+        // emitted in lib.rs.h *after* wrapper.hpp is included.
+        .file("src/q1_interference.cc")
         .compile("wrapper");
 
     println!("cargo:rustc-link-lib=static=wrapper");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=include/wrapper.hxx");
+    println!("cargo:rerun-if-changed=include/wrapper.hpp");
+    println!("cargo:rerun-if-changed=src/q1_interference.cc");
 }
