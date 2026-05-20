@@ -33,6 +33,8 @@
 #include <BRep_Builder.hxx>
 #include <BRepExtrema_SupportType.hxx>
 #include <Standard_Failure.hxx>
+
+#include <exception>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -157,6 +159,14 @@ ClashFfi check_interference(const TopoDS_Shape &shape_a, const TopoDS_Shape &sha
   } catch (const Standard_Failure &f) {
     err_msg_out =
         f.GetMessageString() ? std::string(f.GetMessageString()) : std::string("(no message)");
+    result.has_errors = true;
+    return result;
+  } catch (const std::exception &e) {
+    err_msg_out = e.what() ? std::string(e.what()) : std::string("(no message)");
+    result.has_errors = true;
+    return result;
+  } catch (...) {
+    err_msg_out = "(unknown exception)";
     result.has_errors = true;
     return result;
   }

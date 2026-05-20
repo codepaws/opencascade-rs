@@ -59,7 +59,6 @@ fn main() {
     println!("cargo:rustc-link-lib=static=wrapper");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
-    println!("cargo:rerun-if-changed=include/wrapper.hxx");
     println!("cargo:rerun-if-changed=include/wrapper.hpp");
     println!("cargo:rerun-if-changed=src/q1_interference.cc");
 }

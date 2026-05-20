@@ -1158,19 +1158,23 @@ pub mod ffi {
         pub fn occ_version_minor() -> i32;
         pub fn occ_version_maintenance() -> i32;
 
-        // ─── Q1: CheckerSI orchestrator (returns POD ClashFfi).
-        //
-        // Wraps BOPAlgo_CheckerSI: builds a compound of shape_a + shape_b,
-        // runs the self-intersection checker, then walks BOPDS_DS picking the
-        // first inter-shape interference pair (filtering out same-shape pairs).
-        // Out-params support_a_out / support_b_out are populated with the
-        // selected support sub-shapes; err_msg_out captures CheckerSI errors
-        // or Standard_Failure exception messages.
+        /// CheckerSI-based overlap predicate.
+        ///
+        /// Wraps BOPAlgo_CheckerSI: builds a compound of `shape_a` + `shape_b`,
+        /// runs the self-intersection checker, then walks BOPDS_DS picking the
+        /// first inter-shape interference pair (filtering out same-shape pairs).
+        ///
+        /// `support_a_out` and `support_b_out` are populated ONLY when the returned
+        /// `ClashFfi` has `interferes == true && has_errors == false`. On every
+        /// other path (no interference, or error) they are left unchanged — the
+        /// caller must gate consumption on those flags.
+        ///
+        /// `err_msg_out` captures CheckerSI errors or exception messages.
         pub fn check_interference(
             shape_a: &TopoDS_Shape,
             shape_b: &TopoDS_Shape,
-            support_a_out: Pin<&mut UniquePtr<TopoDS_Shape>>,
-            support_b_out: Pin<&mut UniquePtr<TopoDS_Shape>>,
+            support_a_out: &mut UniquePtr<TopoDS_Shape>,
+            support_b_out: &mut UniquePtr<TopoDS_Shape>,
             err_msg_out: Pin<&mut CxxString>,
         ) -> ClashFfi;
     }
