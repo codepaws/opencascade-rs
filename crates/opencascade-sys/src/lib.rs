@@ -1021,6 +1021,7 @@ pub mod ffi {
             writer: Pin<&mut StlAPI_Writer>,
             shape: &TopoDS_Shape,
             filename: String,
+            ascii: bool,
         ) -> bool;
 
         // Triangulation

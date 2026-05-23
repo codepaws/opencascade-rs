@@ -219,7 +219,7 @@ pub fn main() {
     // Export to an STL file
     let mut stl_writer = StlAPI_Writer_ctor();
     let triangulation = BRepMesh_IncrementalMesh_ctor(&final_shape, 0.01);
-    let success = write_stl(stl_writer.pin_mut(), triangulation.Shape(), "bottle.stl".to_owned());
+    let success = write_stl(stl_writer.pin_mut(), triangulation.Shape(), "bottle.stl".to_owned(), true);
 
     println!("Done! Success = {success}");
 }

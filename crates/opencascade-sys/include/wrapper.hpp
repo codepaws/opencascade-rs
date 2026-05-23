@@ -435,7 +435,11 @@ inline IFSelect_ReturnStatus write_step(STEPControl_Writer &writer, rust::String
   return writer.Write(theFileName.c_str());
 }
 
-inline bool write_stl(StlAPI_Writer &writer, const TopoDS_Shape &theShape, rust::String theFileName) {
+inline bool write_stl(StlAPI_Writer &writer, const TopoDS_Shape &theShape, rust::String theFileName, bool ascii) {
+  // OCCT's StlAPI_Writer::ASCIIMode() returns Standard_Boolean& (a reference)
+  // that acts as both getter and setter. Assigning to it toggles the mode.
+  // Default is Standard_True (ASCII); pass `false` for binary STL.
+  writer.ASCIIMode() = ascii ? Standard_True : Standard_False;
   return writer.Write(theShape, theFileName.c_str());
 }
 
