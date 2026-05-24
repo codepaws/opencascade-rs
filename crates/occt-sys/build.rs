@@ -12,7 +12,13 @@ fn main() {
         .profile("Release")
         .define("BUILD_PATCH", patch_dir)
         .define("BUILD_LIBRARY_TYPE", "Static")
-        .define("BUILD_MODULE_ApplicationFramework", "FALSE")
+        // ApplicationFramework=TRUE enables the XCAF/STEPCAF chain
+        // (TDocStd, XCAFApp, XCAFDoc, TDF, TDataStd, TNaming, TFunction,
+        // CDM, CDF, PCDM, AppStd, AppStdL, persistence drivers). Required
+        // by daedalus P-import Phase II+III (XCAF-aware STEP read+write).
+        // Costs ~30% more OCCT build time vs. FALSE. Source dirs were
+        // restored in the v0.2.6-prep commit (predecessor of this rev).
+        .define("BUILD_MODULE_ApplicationFramework", "TRUE")
         .define("BUILD_MODULE_Draw", "FALSE")
         .define("USE_D3D", "FALSE")
         .define("USE_DRACO", "FALSE")
