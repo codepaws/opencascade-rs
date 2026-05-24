@@ -18,8 +18,18 @@ fn main() {
         // by daedalus P-import Phase II+III (XCAF-aware STEP read+write).
         // Costs ~30% more OCCT build time vs. FALSE. Source dirs were
         // restored in the v0.2.6-prep commit (predecessor of this rev).
-        .define("BUILD_MODULE_ApplicationFramework", "TRUE")
-        .define("BUILD_MODULE_Draw", "FALSE")
+        //
+        // The `:BOOL` suffix is REQUIRED — without it, cmake-rs adds the
+        // cache entry as type UNINITIALIZED, and OCCT's modular build
+        // (adm/MODULES parsed via OCCT_MODULES_AND_TOOLKITS into
+        // OCCT_MODULES + per-module ${MODULE}_TOOLKITS) silently skips
+        // populating the toolkit list for UNINITIALIZED modules. Verified
+        // empirically: build.rs without :BOOL produced 22 libs total (zero
+        // AppFramework); same source + :BOOL produces TKCDF/TKLCAF/TKCAF/
+        // TKVCAF/TKBin/TKBinL/TKXml/TKXmlL/TKStd/TKStdL/TKTObj/TKBinTObj/
+        // TKXmlTObj + DataExchange's TKXCAF/TKXDESTEP/TKXmlXCAF/TKBinXCAF.
+        .define("BUILD_MODULE_ApplicationFramework:BOOL", "TRUE")
+        .define("BUILD_MODULE_Draw:BOOL", "FALSE")
         .define("USE_D3D", "FALSE")
         .define("USE_DRACO", "FALSE")
         .define("USE_EIGEN", "FALSE")
