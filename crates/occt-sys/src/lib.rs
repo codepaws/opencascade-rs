@@ -19,6 +19,10 @@ pub fn occt_path() -> PathBuf {
 /// Build the OCCT library.
 pub fn build_occt() {
     cmake::Config::new(Path::new(env!("OCCT_SRC_DIR")))
+        // daedalus-fixes-v0.3.0 P6: CMake 4 removed compat with <3.5;
+        // OCCT's CMakeLists.txt still declares `cmake_minimum_required
+        // (VERSION 3.1)`. Force the policy floor so configure succeeds.
+        .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
         .define("BUILD_PATCH", Path::new(env!("OCCT_PATCH_DIR")))
         .define("BUILD_LIBRARY_TYPE", "Static")
         .define("BUILD_MODULE_ApplicationFramework", "FALSE")
