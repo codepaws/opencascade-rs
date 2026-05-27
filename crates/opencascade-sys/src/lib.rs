@@ -316,10 +316,19 @@ pub mod ffi {
         #[cxx_name = "construct_unique"]
         pub fn TopoDS_Face_ctor() -> UniquePtr<TopoDS_Face>;
 
+        // daedalus-fixes-v0.2.8-shell-solid: empty TopoDS_Shell ctor.
+        // Pairs with TopoDS_Builder::MakeShell + Add for hand-built
+        // shell topology (needed by design-followups T3 retry to author
+        // non-manifold-at-shell topology that ShapeFix won't normalize).
+        #[cxx_name = "construct_unique"]
+        pub fn TopoDS_Shell_ctor() -> UniquePtr<TopoDS_Shell>;
+
         pub fn cast_vertex_to_shape(wire: &TopoDS_Vertex) -> &TopoDS_Shape;
         pub fn cast_edge_to_shape(wire: &TopoDS_Edge) -> &TopoDS_Shape;
         pub fn cast_wire_to_shape(wire: &TopoDS_Wire) -> &TopoDS_Shape;
         pub fn cast_face_to_shape(wire: &TopoDS_Face) -> &TopoDS_Shape;
+        // daedalus-fixes-v0.2.8-shell-solid: shell-shape upcast.
+        pub fn cast_shell_to_shape(shell: &TopoDS_Shell) -> &TopoDS_Shape;
         pub fn cast_solid_to_shape(wire: &TopoDS_Solid) -> &TopoDS_Shape;
         pub fn cast_compound_to_shape(wire: &TopoDS_Compound) -> &TopoDS_Shape;
 
@@ -327,6 +336,8 @@ pub mod ffi {
         pub fn TopoDS_cast_to_wire(shape: &TopoDS_Shape) -> &TopoDS_Wire;
         pub fn TopoDS_cast_to_edge(shape: &TopoDS_Shape) -> &TopoDS_Edge;
         pub fn TopoDS_cast_to_face(shape: &TopoDS_Shape) -> &TopoDS_Face;
+        // daedalus-fixes-v0.2.8-shell-solid: shape→shell downcast.
+        pub fn TopoDS_cast_to_shell(shape: &TopoDS_Shape) -> &TopoDS_Shell;
         pub fn TopoDS_cast_to_solid(shape: &TopoDS_Shape) -> &TopoDS_Solid;
         pub fn TopoDS_cast_to_compound(shape: &TopoDS_Shape) -> &TopoDS_Compound;
 
@@ -394,6 +405,9 @@ pub mod ffi {
 
         pub fn BRep_Builder_upcast_to_topods_builder(builder: &BRep_Builder) -> &TopoDS_Builder;
         pub fn MakeCompound(self: &TopoDS_Builder, compound: Pin<&mut TopoDS_Compound>);
+        // daedalus-fixes-v0.2.8-shell-solid: initialize an empty TopoDS_Shell
+        // in-place (gives it a TShape so subsequent Add() calls work).
+        pub fn MakeShell(self: &TopoDS_Builder, shell: Pin<&mut TopoDS_Shell>);
         pub fn Add(self: &TopoDS_Builder, shape: Pin<&mut TopoDS_Shape>, compound: &TopoDS_Shape);
 
         // BRepBuilder
@@ -474,6 +488,23 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepBuilderAPI_MakeFace>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepBuilderAPI_MakeFace>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepBuilderAPI_MakeFace) -> bool;
+
+        // daedalus-fixes-v0.2.8-shell-solid: BRepBuilderAPI_MakeSolid(shell)
+        // — package a hand-built TopoDS_Shell into a TopoDS_Solid. Needed
+        // by design-followups T3 retry which constructs non-manifold-at-
+        // shell topology (multiple outer shells) that BRepCheck-flags
+        // invalid AND that ShapeFix won't normalize on STEP round-trip.
+        type BRepBuilderAPI_MakeSolid;
+
+        #[cxx_name = "construct_unique"]
+        pub fn BRepBuilderAPI_MakeSolid_new(
+            shell: &TopoDS_Shell,
+        ) -> UniquePtr<BRepBuilderAPI_MakeSolid>;
+
+        pub fn Solid(self: Pin<&mut BRepBuilderAPI_MakeSolid>) -> &TopoDS_Solid;
+        pub fn Shape(self: Pin<&mut BRepBuilderAPI_MakeSolid>) -> &TopoDS_Shape;
+        pub fn Build(self: Pin<&mut BRepBuilderAPI_MakeSolid>, progress: &Message_ProgressRange);
+        pub fn IsDone(self: &BRepBuilderAPI_MakeSolid) -> bool;
 
         // BRepAdaptor
         type BRepAdaptor_Curve;
