@@ -678,6 +678,7 @@ impl Shape {
             stl_writer.pin_mut(),
             mesher.inner.Shape(),
             path.as_ref().to_string_lossy().to_string(),
+            true,
         );
 
         if success {

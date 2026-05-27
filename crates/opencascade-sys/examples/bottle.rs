@@ -244,6 +244,7 @@ pub fn main() {
         stl_writer.pin_mut(),
         triangulation.Shape(),
         "bottle.stl".to_owned(),
+        true,
     );
     // let success = stl_writer.pin_mut().write_stl(triangulation.Shape(), "bottle.stl".to_owned());
 
