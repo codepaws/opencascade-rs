@@ -2,6 +2,10 @@
 #include <Poly_Triangulation.hxx>
 #include <bindings_common.hxx>
 
+// daedalus-fixes-v0.3.0 P8: MSVC-only non-template handle_try_deref
+// overload for Handle_Poly_Triangulation. No-op on POSIX.
+DAEDALUS_HANDLE_TRY_DEREF_OVERLOAD(Poly_Triangulation)
+
 inline std::unique_ptr<Handle_Poly_Triangulation>
 Handle_Poly_Triangulation_new(std::unique_ptr<Poly_Triangulation> triangulation) {
   return std::unique_ptr<Handle_Poly_Triangulation>(new Handle_Poly_Triangulation(triangulation.release()));
