@@ -39,3 +39,55 @@ pub mod top_exp;
 pub mod top_loc;
 pub mod top_tools;
 pub mod topo_ds;
+
+// daedalus-fixes-v0.3.0 P5: back-compat ffi:: flat namespace.
+//
+// Pre-#199 the cxx-bridge lived in a single `pub mod ffi { ... }` block, so
+// downstreams (notably daedalus's 313 ffi::Foo call sites) addressed every
+// binding as `opencascade_sys::ffi::Foo`. Upstream HEAD's split organizes the
+// bindings into 41 per-feature modules at the crate root. This back-compat
+// shim re-exports every module's contents flat under `ffi::*` so existing
+// downstreams keep building without a sweep.
+pub mod ffi {
+    pub use crate::b_rep::*;
+    pub use crate::b_rep_adaptor::*;
+    pub use crate::b_rep_algo_api::*;
+    pub use crate::b_rep_bnd_lib::*;
+    pub use crate::b_rep_builder_api::*;
+    pub use crate::b_rep_feat::*;
+    pub use crate::b_rep_fillet_api::*;
+    pub use crate::b_rep_g_prop::*;
+    pub use crate::b_rep_int_curve_surface::*;
+    pub use crate::b_rep_lib::*;
+    pub use crate::b_rep_mesh::*;
+    pub use crate::b_rep_offset_api::*;
+    pub use crate::b_rep_prim_api::*;
+    pub use crate::b_rep_tools::*;
+    pub use crate::bin_tools::*;
+    pub use crate::bnd::*;
+    pub use crate::bop_algo::*;
+    pub use crate::g_prop::*;
+    pub use crate::gc::*;
+    pub use crate::gc_pnts::*;
+    pub use crate::geom::*;
+    pub use crate::geom2d::*;
+    pub use crate::geom_abs::*;
+    pub use crate::geom_api::*;
+    pub use crate::gp::*;
+    pub use crate::if_select::*;
+    pub use crate::iges_control::*;
+    pub use crate::law::*;
+    pub use crate::message::*;
+    pub use crate::poly::*;
+    pub use crate::shape_analysis::*;
+    pub use crate::shape_upgrade::*;
+    pub use crate::standard::*;
+    pub use crate::step_control::*;
+    pub use crate::stl_api::*;
+    pub use crate::t_col_gp::*;
+    pub use crate::top_abs::*;
+    pub use crate::top_exp::*;
+    pub use crate::top_loc::*;
+    pub use crate::top_tools::*;
+    pub use crate::topo_ds::*;
+}
