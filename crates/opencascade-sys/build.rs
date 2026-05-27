@@ -138,8 +138,17 @@ impl OcctConfig {
             std::env::set_var("DEP_OCCT_ROOT", occt_sys::occt_path().as_os_str());
         }
 
-        let dst =
-            std::panic::catch_unwind(|| cmake::Config::new("OCCT").register_dep("occt").build());
+        // daedalus-fixes-v0.3.0 P7: CMake 4 removed compat with <3.5; the
+        // OCCT/CMakeLists.txt wrapper here still declares
+        // `cmake_minimum_required (VERSION 3.1)`. Force the policy floor
+        // (same fix as P6 on occt-sys::build_occt(), but for the second
+        // cmake invocation that runs find_package(OpenCASCADE)).
+        let dst = std::panic::catch_unwind(|| {
+            cmake::Config::new("OCCT")
+                .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
+                .register_dep("occt")
+                .build()
+        });
 
         #[cfg(feature = "builtin")]
         let dst = dst.expect("Builtin OpenCASCADE library not found.");
